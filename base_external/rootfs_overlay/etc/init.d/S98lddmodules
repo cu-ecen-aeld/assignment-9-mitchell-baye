@@ -1,0 +1,42 @@
+#!/bin/sh
+
+SCULL_DEVS=4
+SCULL_MAJOR=0
+SCULL_MODE=664
+MODULE_DIR=/lib/modules/$(uname -r)/extra
+
+case "$1" in
+    start)
+        echo "Loading ldd modules..."
+
+        modprobe hello
+        insmod ${MODULE_DIR}/scull.ko scull_nr_devs=${SCULL_DEVS} scull_major=${SCULL_MAJOR}
+        MAJOR=$(awk '$2=="scull" {print $1}' /proc/devices)
+        rm -f /dev/scull[0-3]
+        mknod /dev/scull0 c ${MAJOR} 0
+        mknod /dev/scull1 c ${MAJOR} 1
+        mknod /dev/scull2 c ${MAJOR} 2
+        mknod /dev/scull3 c ${MAJOR} 3
+        chmod ${SCULL_MODE} /dev/scull[0-3]
+        insmod ${MODULE_DIR}/faulty.ko
+        FAULTY_MAJOR=$(awk '$2=="faulty" {print $1}' /proc/devices)
+        rm -f /dev/faulty
+        mknod /dev/faulty c ${FAULTY_MAJOR} 0
+        ;;
+
+    stop)
+        echo "Unloading ldd modules..."
+
+        rmmod faulty
+        rmmod scull
+        rm -f /dev/scull[0-3]
+        rmmod hello
+        ;;
+
+    *)
+        echo "Usage: $0 {start|stop}"
+        exit 1
+        ;;
+esac
+
+exit 0
