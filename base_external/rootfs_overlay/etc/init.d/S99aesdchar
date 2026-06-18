@@ -1,7 +1,7 @@
 #!/bin/sh
 
 DEVICE_NAME=aesdchar
-MODULE_DIR=/lib/modules/&(uname -r)/extra
+MODULE_DIR=/lib/modules/$(uname -r)/extra
 
 case "$1" in
     start)
