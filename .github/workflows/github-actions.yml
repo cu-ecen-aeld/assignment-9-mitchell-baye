@@ -38,6 +38,7 @@ jobs:
           - name: Run full test
             env:
               GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+              SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
             run: ./full-test.sh
           - name: Cleanup
             if: always()
