@@ -1,0 +1,46 @@
+name: assignment-test
+on:
+    push:
+        tags-ignore:
+            - '*'
+        branches:
+            - '*'
+jobs:
+    full-test:
+        container: cuaesd/aesd-autotest:24-assignment7-buildroot
+        runs-on: self-hosted
+        timeout-minutes: 120
+        steps:
+          - name: Debug SSH
+            run: |
+              ssh-add -l
+              ssh -T git@github.com || true
+          - uses: actions/checkout@v2
+          - uses: webfactory/ssh-agent@v0.5.3
+            with:
+                ssh-private-key: ${{ secrets.SSH_PRIVATE_KEY }}
+          - name: Fix known_hosts
+            env:
+              SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+            run: |
+              ssh-keygen -f "/root/.ssh/known_hosts" -R "github.com" || true
+              ssh-keyscan -t rsa,ed25519,ecdsa github.com >> /root/.ssh/known_hosts
+              echo "$SSH_PRIVATE_KEY" > /root/.ssh/id_ed25519
+              chmod 600 /root/.ssh/id_ed25519
+          - name: Checkout submodules
+            run: git submodule update --init --recursive
+          - name: Disable strict host checking
+            run: |
+                mkdir -p ~/.ssh
+                echo "Host localhost" >> ~/.ssh/config
+                echo " StrictHostKeyChecking no" >> ~/.ssh/config
+                echo " UserKNownHostFile /dev/nll" >> ~/.ssh/config
+          - name: Run full test
+            env:
+              GIT_SSH_COMMAND: "ssh -o StrictHostKeyChecking=no"
+              SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
+            run: ./full-test.sh
+          - name: Cleanup
+            if: always()
+            run: |
+              ssh-add -D
