@@ -11,6 +11,10 @@ jobs:
         runs-on: self-hosted
         timeout-minutes: 120
         steps:
+          - name: Debug SSH
+            run: |
+              ssh-add -l
+              ssh -T git@github.com || true
           - uses: actions/checkout@v2
           - uses: webfactory/ssh-agent@v0.5.3
             with:
